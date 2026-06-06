@@ -644,13 +644,18 @@
     }
 
     async function sendEnquiry() {
-      const data = new FormData();
-      data.append('name',    document.getElementById('contact_name').value.trim());
-      data.append('email',   document.getElementById('email').value.trim());
-      data.append('phone',   document.getElementById('phone').value.trim() || '—');
-      data.append('message', document.getElementById('message').value.trim());
+      const payload = {
+        name:    document.getElementById('contact_name').value.trim(),
+        email:   document.getElementById('email').value.trim(),
+        phone:   document.getElementById('phone').value.trim() || '—',
+        message: document.getElementById('message').value.trim(),
+      };
       try {
-        await fetch('/api/submit', { method: 'POST', body: data });
+        await fetch('/api/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
       } catch (_) { /* silent — animation shows regardless */ }
     }
 

@@ -1,11 +1,11 @@
 const nodemailer = require('nodemailer');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ ok: false, error: 'Method not allowed' });
   }
 
-  const { name, email, phone, message } = req.body;
+  const { name, email, phone, message } = req.body || {};
 
   if (!name || !email || !message) {
     return res.status(400).json({ ok: false, error: 'Missing required fields' });
@@ -36,4 +36,4 @@ export default async function handler(req, res) {
   } catch (err) {
     return res.status(500).json({ ok: false, error: 'Failed to send email' });
   }
-}
+};
