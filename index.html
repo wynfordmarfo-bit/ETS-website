@@ -650,7 +650,7 @@
       data.append('phone',   document.getElementById('phone').value.trim() || '—');
       data.append('message', document.getElementById('message').value.trim());
       try {
-        await fetch('submit.php', { method: 'POST', body: data });
+        await fetch('/api/submit', { method: 'POST', body: data });
       } catch (_) { /* silent — animation shows regardless */ }
     }
 
