@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Elite Touch Sports | Bridging Ambition with Opportunities</title>
+  <meta name="description" content="Bridging Ambition with Opportunities">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            background: '#0d0d0d',
+            foreground: '#fafafa',
+            card: '#171717',
+            primary: '#F2B926',
+            'primary-foreground': '#0d0d0d',
+            secondary: '#1f1f1f',
+            muted: '#242424',
+            'muted-foreground': '#999999',
+            border: '#2e2e2e',
+            accent: '#F2B926',
+          },
+          fontFamily: {
+            bebas: ['"Bebas Neue"', 'sans-serif'],
+            montserrat: ['Montserrat', 'sans-serif'],
+            inter: ['Inter', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
+
+  <style>
+    *, *::before, *::after { -webkit-font-smoothing: antialiased; box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; background: #0d0d0d; color: #fafafa; }
+
+    .font-bebas { font-family: 'Bebas Neue', sans-serif; }
+    .font-montserrat { font-family: 'Montserrat', sans-serif; }
+
+    /* Nav */
+    #navbar { transition: background 0.35s ease, backdrop-filter 0.35s ease; }
+
+    /* Mobile menu */
+    #mobile-menu { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
+    #mobile-menu.open { max-height: 400px; }
+
+    /* Form inputs */
+    .form-input {
+      display: block; width: 100%;
+      background: transparent;
+      border: 1px solid #2e2e2e;
+      border-radius: 6px;
+      padding: 8px 12px;
+      color: #fafafa;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-input:focus { border-color: #F2B926; box-shadow: 0 0 0 2px rgba(242,185,38,0.15); }
+    .form-input::placeholder { color: #444; font-style: italic; }
+    .form-input.field-error { border-color: #ef4444 !important; }
+    .field-error-msg { display: none; color: #ef4444; font-size: 12px; margin-top: 4px; font-family: 'Inter', sans-serif; }
+    .field-error-msg.visible { display: block; }
+    textarea.form-input { resize: none; height: 112px; }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20%      { transform: translateX(-6px); }
+      40%      { transform: translateX(6px); }
+      60%      { transform: translateX(-4px); }
+      80%      { transform: translateX(4px); }
+    }
+    .shake { animation: shake 0.4s ease; }
+
+    /* Leaflet dark */
+    .leaflet-container { background: #0d0d0d; }
+    .leaflet-control-zoom a { background: #171717 !important; color: #fafafa !important; border-color: #2e2e2e !important; }
+    .leaflet-control-zoom a:hover { background: #242424 !important; }
+    .leaflet-bar { border: 1px solid #2e2e2e !important; box-shadow: none !important; }
+
+    /* News card hover */
+    .news-card { transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s; }
+    .news-card:hover { border-color: #F2B926; box-shadow: 0 0 0 1px rgba(242,185,38,0.6), 0 0 24px rgba(242,185,38,0.12); }
+    .news-card:hover h3 { color: #F2B926; }
+    .news-card:hover .news-img { transform: scale(1.05); }
+    .news-img { transition: transform 0.5s ease; }
+
+    /* Gold button */
+    .btn-gold {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      background: #F2B926; color: #000;
+      font-family: 'Montserrat', sans-serif; font-weight: 700;
+      border-radius: 9999px; padding: 14px 32px;
+      font-size: 16px; line-height: 1;
+      text-decoration: none; border: none; cursor: pointer;
+      transition: background 0.2s, transform 0.15s;
+      box-shadow: 0 4px 30px rgba(242,185,38,0.4);
+    }
+    .btn-gold:hover { background: #d4a020; }
+    .btn-gold:active { transform: scale(0.97); }
+    .btn-gold:focus-visible { outline: 2px solid #F2B926; outline-offset: 3px; }
+
+    /* Scroll bounce */
+    @keyframes bounce-slow {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(6px); }
+    }
+    .bounce-slow { animation: bounce-slow 1.8s ease-in-out infinite; }
+
+    /* Pulse for LIVE dot */
+    @keyframes live-pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    .live-pulse { animation: live-pulse 1.5s ease-in-out infinite; }
+
+    /* Circular progress ring for submit button */
+    @keyframes ring-fill {
+      from { stroke-dashoffset: 50.27; }
+      to   { stroke-dashoffset: 0; }
+    }
+    .progress-ring-active {
+      animation: ring-fill 3s linear forwards;
+      transform-origin: center;
+    }
+    #submit-btn { position: relative; overflow: visible; }
+    #submit-btn:disabled { cursor: not-allowed; }
+
+    /* Animated hero word transitions */
+    .animated-word {
+      white-space: nowrap;
+      transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s ease;
+    }
+    .animated-word[data-active="true"] {
+      transform: translateX(-50%) translateY(0) !important;
+      opacity: 1 !important;
+    }
+    .animated-word[data-exiting="true"] {
+      transform: translateX(-50%) translateY(-120px) !important;
+      opacity: 0 !important;
+    }
+  </style>
+</head>
+
+<body class="bg-background text-foreground">
+
+  <!-- ===================== NAV ===================== -->
+  <nav id="navbar" class="fixed top-0 left-0 right-0 z-50" style="background: rgba(13,13,13,0); backdrop-filter: none;">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-28 pt-4">
+
+        <!-- Logo -->
+        <a href="#" class="flex items-center gap-3 flex-shrink-0">
+          <img src="brand_assets/ets_logo_base44.png" alt="Elite Touch Sports Logo" class="w-36 h-36 object-contain object-bottom mt-8">
+        </a>
+
+        <!-- Desktop links -->
+        <div class="hidden md:flex items-center gap-6 ml-auto mr-16">
+          <a href="#about" class="text-sm font-medium text-white hover:text-white transition-colors font-inter">About Us</a>
+          <a href="#articles" class="text-sm font-medium text-white hover:text-white transition-colors font-inter">Latest</a>
+          <a href="#contact" class="text-sm font-medium text-white hover:text-white transition-colors font-inter">Contact</a>
+        </div>
+
+        <!-- Desktop CTA -->
+        <div class="hidden md:flex items-center gap-3">
+          <a href="#contact" class="inline-flex items-center justify-center gap-2 rounded-full px-6 py-2 text-sm font-bold font-montserrat transition-colors" style="background: #F2B926; color: #000;">Get Started</a>
+        </div>
+
+        <!-- Hamburger -->
+        <button id="hamburger" class="md:hidden p-2 text-white" aria-label="Menu">
+          <svg id="icon-menu" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="18" y2="18"/>
+          </svg>
+          <svg id="icon-close" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden">
+            <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+          </svg>
+        </button>
+
+      </div>
+    </div>
+
+    <!-- Mobile menu -->
+    <div id="mobile-menu" style="background: rgba(13,13,13,0.97);">
+      <div class="px-6 py-6 flex flex-col gap-5">
+        <a href="#about" class="text-sm font-medium text-white hover:text-primary transition-colors">About Us</a>
+        <a href="#articles" class="text-sm font-medium text-white hover:text-primary transition-colors">Latest</a>
+        <a href="#contact" class="text-sm font-medium text-white hover:text-primary transition-colors">Contact</a>
+        <a href="#contact" class="inline-flex items-center justify-center rounded-full px-6 py-2.5 text-sm font-bold font-montserrat w-fit" style="background: #F2B926; color: #000;">Get Started</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ===================== HERO ===================== -->
+  <section id="hero" class="relative min-h-screen flex items-center overflow-hidden bg-background">
+
+    <!-- Background video -->
+    <div class="absolute inset-0 z-0">
+      <video autoplay muted loop playsinline class="w-full h-full object-cover" style="opacity: 0.85;" poster="brand_assets/hero_poster.png">
+        <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4" type="video/mp4">
+      </video>
+      <div class="absolute inset-0" style="background: linear-gradient(to right, rgba(13,13,13,0.85) 0%, rgba(13,13,13,0.55) 50%, transparent 100%);"></div>
+      <div class="absolute inset-0" style="background: linear-gradient(to top, rgba(13,13,13,0.95) 0%, transparent 40%);"></div>
+    </div>
+
+    <!-- Gold top line -->
+    <div class="absolute top-0 left-0 right-0 z-10" style="height: 3px; background: linear-gradient(90deg, transparent, hsl(43 89% 65%), hsl(43 89% 75%), hsl(43 89% 65%), transparent); box-shadow: 0 0 12px hsl(43 89% 65% / 0.6);"></div>
+
+    <!-- Decorative orbs -->
+    <div class="absolute w-96 h-96 rounded-full pointer-events-none" style="background: radial-gradient(circle, #F2B926, transparent); top: 10%; right: 5%; opacity: 0.05;"></div>
+    <div class="absolute w-64 h-64 rounded-full pointer-events-none" style="background: radial-gradient(circle, #F2B926, transparent); bottom: 15%; left: 2%; opacity: 0.05;"></div>
+
+    <!-- Content -->
+    <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-48 w-full">
+      <div class="max-w-3xl mx-auto text-center">
+
+        <!-- Live badge -->
+        <div class="inline-flex items-center gap-5 rounded-2xl px-6 py-4 mb-8 mx-auto" style="background: rgba(0,0,0,0.5); backdrop-filter: blur(8px); border: 1px solid rgba(242,185,38,0.4);">
+          <div class="flex items-center gap-2">
+            <span class="live-pulse w-2.5 h-2.5 rounded-full flex-shrink-0" style="background: #ef4444;"></span>
+            <span class="text-xs font-medium uppercase tracking-wider font-montserrat" style="color: rgba(255,255,255,0.6);">Live</span>
+          </div>
+          <div class="w-px h-8" style="background: rgba(255,255,255,0.1);"></div>
+          <div>
+            <span class="text-3xl font-black font-bebas tabular-nums" style="color: #F2B926;">102+</span>
+            <span class="text-sm ml-2 font-montserrat" style="color: rgba(255,255,255,0.6);">students coached &amp; counting</span>
+          </div>
+        </div>
+
+            <!-- Animated hero text -->
+        <div class="mt-4">
+          <p class="font-montserrat font-black uppercase" style="color: #F2B926; font-size: clamp(1.3rem, 2.4vw, 2rem); letter-spacing: 0.06em; white-space: nowrap;">WE DON'T JUST RUN SESSIONS WE</p>
+          <div class="animated-word-container" style="height: 2.5rem; overflow: hidden; position: relative; margin-top: 0.3rem;">
+            <span class="animated-word font-montserrat font-black uppercase" style="color: #ffffff; font-size: clamp(1rem, 1.8vw, 1.5rem); letter-spacing: 0.12em; position: absolute; left: 50%; transform: translateX(-50%) translateY(0); opacity: 1;" data-active="true">spark potential</span>
+            <span class="animated-word font-montserrat font-black uppercase" style="color: #ffffff; font-size: clamp(1rem, 1.8vw, 1.5rem); letter-spacing: 0.12em; position: absolute; left: 50%; transform: translateX(-50%) translateY(100px); opacity: 0;">mentor</span>
+            <span class="animated-word font-montserrat font-black uppercase" style="color: #ffffff; font-size: clamp(1rem, 1.8vw, 1.5rem); letter-spacing: 0.12em; position: absolute; left: 50%; transform: translateX(-50%) translateY(100px); opacity: 0;">open doors</span>
+            <span class="animated-word font-montserrat font-black uppercase" style="color: #ffffff; font-size: clamp(1rem, 1.8vw, 1.5rem); letter-spacing: 0.12em; position: absolute; left: 50%; transform: translateX(-50%) translateY(100px); opacity: 0;">create pathways</span>
+            <span class="animated-word font-montserrat font-black uppercase" style="color: #ffffff; font-size: clamp(1rem, 1.8vw, 1.5rem); letter-spacing: 0.12em; position: absolute; left: 50%; transform: translateX(-50%) translateY(100px); opacity: 0;">leave a legacy</span>
+          </div>
+        </div>
+
+        <!-- CTA -->
+        <div class="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
+          <a href="#contact" class="btn-gold" style="padding: 8px 28px; font-size: 14px; font-weight: 700;">
+            Get In Touch
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          </a>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Scroll indicator -->
+    <div class="absolute left-1/2 z-10 flex flex-col items-center gap-1" style="bottom: 88px; transform: translateX(-50%);">
+      <span class="text-xs font-montserrat uppercase tracking-widest" style="color: #F2B926;">SCROLL</span>
+      <div class="bounce-slow mt-1">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F2B926" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ===================== ABOUT ===================== -->
+  <section id="about" class="py-24 bg-background">
+    <div class="max-w-7xl mx-auto px-8">
+      <div class="w-full">
+        <p class="mb-3 text-3xl font-extrabold text-center capitalize tracking-widest font-montserrat" style="color: #F2B926;">ABOUT US</p>
+        <h2 class="text-foreground text-4xl font-black text-center tracking-tight leading-tight font-montserrat">Born From Our Own Journey Through School</h2>
+        <p class="mt-5 leading-relaxed font-inter" style="color: #999;">Elite Touch Sports was founded with one goal: creating pathways for all students. We leverage our reach within the sports world and beyond to provide the mentorship and industry access that can change the trajectory of a student's life.</p>
+        <p class="mt-4 leading-relaxed font-inter" style="color: #999;">We aren't just building athletes we are nurturing the leaders of the next generation. Through a blend of training and immersive workshops, we connect students with world class achievers ranging from Premier League icons to visionary leaders in business, media, and technology.</p>
+        <p class="mt-4 leading-relaxed font-inter" style="color: #999;">We bring external opportunities into the school environment, dismantling the barriers of race, religion, gender, income or simply the lack of knowledge on where to find opportunities outside the school building. No student should miss out because of where they come from.</p>
+        <p class="mt-4 leading-relaxed font-inter" style="color: #999;">Unlike most sports providers who deliver sessions and move on, <strong class="text-white font-bold">we don't just show up and leave</strong>. We invest in the whole student their mindset, their ambition, their future. The work we do inside schools is designed to stay with young people long after the final lesson. Creating memories, confidence, and connections that last well beyond their school years. <strong class="text-white font-bold">That's what sets us apart.</strong></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== HOW IT WORKS ===================== -->
+  <section id="how-it-works" class="py-24 sm:py-32 bg-background">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+      <!-- Header -->
+      <div class="text-center mb-16">
+        <p class="mb-3 text-3xl font-extrabold text-center capitalize tracking-widest font-montserrat" style="color: #F2B926;">HOW IT WORKS</p>
+        <h2 class="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight font-montserrat">Simple Steps to Get Started</h2>
+        <p class="mt-4 mx-auto text-sm capitalize max-w-xl font-inter" style="color: #999;">Redefining sports provision. Effortlessly.</p>
+      </div>
+
+      <!-- Steps grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+
+        <!-- Step 1 -->
+        <div class="relative text-center">
+          <div class="hidden lg:block absolute top-8 left-[60%] border-t-2 border-dashed" style="width: 80%; border-color: #2e2e2e;"></div>
+          <div class="relative z-10 w-16 h-16 mx-auto rounded-2xl flex items-center justify-center mb-5" style="background: rgba(242,185,38,0.1);">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#F2B926" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            <span class="absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold font-montserrat" style="background: #F2B926; color: #000;">1</span>
+          </div>
+          <h3 class="text-lg font-bold text-foreground font-montserrat">Get In Touch</h3>
+          <p class="mt-2 text-sm leading-relaxed font-inter" style="color: #999;">Contact us to discuss your school's needs and goals. We'll arrange a free consultation.</p>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="relative text-center">
+          <div class="hidden lg:block absolute top-8 left-[60%] border-t-2 border-dashed" style="width: 80%; border-color: #2e2e2e;"></div>
+          <div class="relative z-10 w-16 h-16 mx-auto rounded-2xl flex items-center justify-center mb-5" style="background: rgba(242,185,38,0.1);">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#F2B926" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>
+            <span class="absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold font-montserrat" style="background: #F2B926; color: #000;">2</span>
+          </div>
+          <h3 class="text-lg font-bold text-foreground font-montserrat">Tailored Plan</h3>
+          <p class="mt-2 text-sm leading-relaxed font-inter" style="color: #999;">We design a bespoke programme that fits your timetable, curriculum, and budget.</p>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="relative text-center">
+          <div class="hidden lg:block absolute top-8 left-[60%] border-t-2 border-dashed" style="width: 80%; border-color: #2e2e2e;"></div>
+          <div class="relative z-10 w-16 h-16 mx-auto rounded-2xl flex items-center justify-center mb-5" style="background: rgba(242,185,38,0.1);">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#F2B926" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="m9 16 2 2 4-4"/></svg>
+            <span class="absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold font-montserrat" style="background: #F2B926; color: #000;">3</span>
+          </div>
+          <h3 class="text-lg font-bold text-foreground font-montserrat">Sessions Begin</h3>
+          <p class="mt-2 text-sm leading-relaxed font-inter" style="color: #999;">Our qualified coaches arrive at your school, fully equipped and ready to inspire.</p>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="relative text-center">
+          <div class="relative z-10 w-16 h-16 mx-auto rounded-2xl flex items-center justify-center mb-5" style="background: rgba(242,185,38,0.1);">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#F2B926" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/></svg>
+            <span class="absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold font-montserrat" style="background: #F2B926; color: #000;">4</span>
+          </div>
+          <h3 class="text-lg font-bold text-foreground font-montserrat">Watch Them Thrive</h3>
+          <p class="mt-2 text-sm leading-relaxed font-inter" style="color: #999;">Students build skills, confidence, and a lifelong love for sport and physical activity.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== LATEST ===================== -->
+  <section id="articles" class="py-24 sm:py-32 bg-background">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+      <!-- Header -->
+      <div class="mb-14">
+        <p class="mb-3 text-3xl font-extrabold text-center uppercase tracking-widest font-montserrat" style="color: #F2B926;">LATEST</p>
+        <h2 class="text-foreground mx-4 my-1 text-3xl font-extrabold text-center tracking-tight sm:text-4xl font-montserrat">Stories &amp; Updates</h2>
+      </div>
+
+      <!-- Cards grid -->
+      <div class="mx-1 grid grid-cols-1 md:grid-cols-3 gap-7">
+
+        <!-- Card 1 -->
+        <article class="news-card group rounded-2xl overflow-hidden flex flex-col cursor-pointer" style="background: #171717; border: 1px solid #2e2e2e;">
+          <div class="relative overflow-hidden" style="aspect-ratio: 16/9;">
+            <img src="brand_assets/latest_card_1.png" alt="Counting down to September!" class="news-img w-full h-full object-cover">
+            <div class="absolute inset-0" style="background: linear-gradient(to top, rgba(0,0,0,0.6), transparent);"></div>
+          </div>
+          <div class="p-6 flex flex-col flex-1">
+            <div class="flex items-center gap-3 text-xs mb-3 font-montserrat" style="color: #999;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>
+              <span>July 2026</span>
+            </div>
+            <h3 class="text-base font-bold text-foreground leading-snug mb-3 font-montserrat group-hover:text-primary transition-colors">Counting down to September!</h3>
+            <p class="text-sm leading-relaxed flex-1 font-inter" style="color: #999;">This September, we're launching at Globe Primary School. We can't wait to leave a lasting impact and give students the skills and memories of a lifetime.</p>
+          </div>
+        </article>
+
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== FOLLOW OUR JOURNEY ===================== -->
+  <section id="latest" class="py-24 sm:py-32" style="background: rgba(31,31,31,0.2);">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+      <!-- Header -->
+      <div class="text-center mb-12">
+        <div class="inline-flex items-center gap-2 mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F2B926" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
+          <p class="text-sm font-bold uppercase tracking-widest font-montserrat" style="color: #F2B926;">@elitetouchsports</p>
+        </div>
+        <h2 class="text-3xl sm:text-4xl font-black text-foreground tracking-tight font-montserrat">Follow Our Journey</h2>
+        <p class="mt-3 max-w-md mx-auto text-sm font-inter" style="color: #999;">See what we're up to on Instagram</p>
+      </div>
+
+      <!-- Instagram card -->
+      <div class="flex justify-center">
+        <a href="https://www.instagram.com/elitetouchsports" target="_blank" rel="noopener noreferrer"
+           class="group flex flex-col sm:flex-row items-center gap-6 sm:gap-10 rounded-3xl px-8 py-8 sm:px-12 sm:py-10 w-full max-w-2xl transition-transform duration-300 hover:scale-[1.02]"
+           style="border: 2px solid rgba(242,185,38,0.4); background: #171717;">
+          <!-- Logo with instagram badge -->
+          <div class="relative flex-shrink-0">
+            <div class="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden">
+              <img src="brand_assets/ets_logo_base44.png" alt="Elite Touch Sports" class="w-full h-full object-contain">
+            </div>
+            <div class="absolute -bottom-1 -right-1 w-8 h-8 rounded-full flex items-center justify-center" style="background: #F2B926;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
+            </div>
+          </div>
+
+          <!-- Text -->
+          <div class="text-center sm:text-left">
+            <p class="text-xs font-semibold uppercase tracking-widest font-montserrat mb-1" style="color: #F2B926;">Instagram</p>
+            <p class="text-white font-black text-2xl font-montserrat">Elite Touch Sports</p>
+            <p class="text-sm font-montserrat mt-0.5" style="color: rgba(255,255,255,0.5);">@elitetouchsports</p>
+            <p class="text-sm mt-3 leading-relaxed font-inter" style="color: rgba(255,255,255,0.7);">Bridging Ambition with Opportunities</p>
+            <div class="mt-4 inline-flex items-center gap-2 px-5 py-2 rounded-full text-sm font-bold font-montserrat" style="background: #F2B926; color: #000;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
+              Follow Us
+            </div>
+          </div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== CONTACT ===================== -->
+  <section id="contact" class="py-24 sm:py-32" style="background: rgba(31,31,31,0.3);">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+      <!-- Header -->
+      <div class="text-center mb-16">
+        <p class="mb-3 text-3xl font-extrabold text-center capitalize tracking-widest font-montserrat" style="color: #F2B926;">get in touch</p>
+        <h2 class="text-foreground text-xl font-extrabold text-center capitalize tracking-tight sm:text-5xl font-montserrat">Ready to Partner?</h2>
+        <p class="text-base sm:text-lg font-montserrat mt-1" style="color: #999;">Or just have a query?</p>
+        <p class="mt-3 max-w-xl mx-auto font-inter" style="color: #999;">Fill in the form and our team will be in touch</p>
+      </div>
+
+      <!-- Map -->
+      <div class="mb-6 rounded-2xl overflow-hidden" style="border: 1px solid #2e2e2e; height: 420px;">
+        <div id="map" class="w-full h-full"></div>
+      </div>
+      <p class="text-white mt-3 text-lg font-semibold text-center font-montserrat">📍 Schools where we currently deliver</p>
+      <p class="text-sm text-center mt-1 mb-16 font-inter" style="color: #999;">Hover any marker to view our partner schools</p>
+
+      <!-- Form -->
+      <div class="max-w-2xl mx-auto">
+        <!-- Success state (hidden by default) -->
+        <div id="form-success" class="hidden rounded-2xl border p-10 text-center" style="background: #171717; border-color: #2e2e2e;">
+          <div class="w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-4" style="background: rgba(242,185,38,0.1);">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#F2B926" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>
+          </div>
+          <h3 id="success-message" class="text-xl font-bold text-foreground font-montserrat"></h3>
+          <p class="mt-2 font-inter" style="color: #999;">Thank you for reaching out.</p>
+        </div>
+
+        <form id="contact-form" class="rounded-2xl p-8 space-y-5" style="background: #171717; border: 1px solid #2e2e2e;" onsubmit="handleFormSubmit(event)">
+
+          <div class="space-y-2">
+            <label class="block text-sm font-medium font-inter" style="color: #fafafa;">Name</label>
+            <input class="form-input" type="text" id="contact_name" placeholder="Required">
+            <p class="field-error-msg" id="contact_name-error">Please enter your name.</p>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div class="space-y-2">
+              <label class="block text-sm font-medium font-inter" style="color: #fafafa;">Email</label>
+              <input class="form-input" type="email" id="email" placeholder="Required">
+              <p class="field-error-msg" id="email-error">Please enter a valid email address.</p>
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-medium font-inter" style="color: #fafafa;">Phone</label>
+              <input class="form-input" type="tel" id="phone" placeholder="Optional">
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <label class="block text-sm font-medium font-inter" style="color: #fafafa;">Message</label>
+            <textarea class="form-input" id="message" placeholder="Required"></textarea>
+            <p class="field-error-msg" id="message-error">Please enter your message.</p>
+          </div>
+
+          <button id="submit-btn" type="submit" class="w-full inline-flex items-center justify-center gap-2 rounded-full text-base font-semibold font-montserrat transition-colors" style="background: #F2B926; color: #000; padding: 14px 24px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></svg>
+            Send Enquiry
+          </button>
+
+        </form>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ===================== FOOTER ===================== -->
+  <footer style="background: #171717; position: relative;">
+    <!-- Top gold line -->
+    <div style="height: 1px; background: linear-gradient(to right, transparent, #F2B926, transparent);"></div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
+
+        <!-- Brand -->
+        <div>
+          <div class="flex items-center gap-3 mb-4">
+            <img src="brand_assets/ets_logo_base44.png" alt="Elite Touch Sports Logo" class="w-16 h-16 object-contain">
+            <span class="text-base font-black text-foreground font-montserrat">Elite Touch Sports</span>
+          </div>
+          <p class="text-sm leading-relaxed font-inter" style="color: #999;">Bridging Ambition With Opportunities</p>
+        </div>
+
+        <!-- Contact -->
+        <div>
+          <h4 class="text-sm font-bold text-foreground mb-4 uppercase tracking-wider font-montserrat">Contact</h4>
+          <ul class="space-y-3">
+            <li class="flex items-center gap-2 text-sm font-inter" style="color: #999;"></li>
+            <li class="flex items-center gap-2 text-sm font-inter" style="color: #999;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F2B926" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+              <a href="mailto:enquiries@elitetouchsports.co.uk" class="hover:text-foreground transition-colors">enquiries@elitetouchsports.co.uk</a>
+            </li>
+            <li class="flex items-center gap-2 text-sm font-inter" style="color: #999;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F2B926" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
+              <a href="https://www.instagram.com/elitetouchsports" target="_blank" rel="noopener noreferrer" class="hover:text-foreground transition-colors">@elitetouchsports</a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Legal -->
+        <div>
+          <h4 class="text-sm font-bold text-foreground mb-4 uppercase tracking-wider font-montserrat">Legal</h4>
+          <ul class="space-y-2 text-sm font-inter" style="color: #999;">
+            <li>Company No: 15867974</li>
+            <li>VAT: 488556135</li>
+            <li class="leading-relaxed">71-75 Shelton Street,<br>Covent Garden, WC2H 9JQ</li>
+          </ul>
+        </div>
+
+      </div>
+
+      <!-- Bottom bar -->
+      <div class="mt-10 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4" style="border-top: 1px solid #2e2e2e;">
+        <p class="text-xs font-inter" style="color: #999;">© 2026 Elite Touch Sports Ltd. All rights reserved.</p>
+        <a href="https://www.instagram.com/elitetouchsports" target="_blank" rel="noopener noreferrer"
+           class="flex items-center gap-2 text-xs font-inter hover:text-primary transition-colors" style="color: #999;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
+          Follow us on Instagram
+        </a>
+      </div>
+
+    </div>
+
+    <!-- Bottom gold line -->
+    <div style="height: 1px; background: linear-gradient(to right, transparent, #F2B926, transparent);"></div>
+  </footer>
+
+  <!-- ===================== JS ===================== -->
+  <script>
+    // Success messages — rotates through all 3, never repeats back-to-back
+    const SUCCESS_MESSAGES = [
+      "First brick of the bridge laid! — We will be in touch",
+      "The scaffolding is up! — We will be in touch",
+      "Cement is drying! — We will be in touch",
+    ];
+    let lastMessageIndex = -1;
+
+    function pickMessage() {
+      let idx;
+      do { idx = Math.floor(Math.random() * SUCCESS_MESSAGES.length); }
+      while (idx === lastMessageIndex && SUCCESS_MESSAGES.length > 1);
+      lastMessageIndex = idx;
+      return SUCCESS_MESSAGES[idx];
+    }
+
+    // ETS logo confetti burst
+    function launchLogoConfetti(originEl) {
+      const rect = originEl.getBoundingClientRect();
+      const ox = rect.left + rect.width / 2;
+      const oy = rect.top + rect.height / 2;
+
+      for (let i = 0; i < 35; i++) {
+        const img = document.createElement('img');
+        img.src = 'brand_assets/ets_logo_base44.png';
+        const size = 28 + Math.random() * 48;
+        img.style.cssText = `
+          position:fixed; z-index:99999; pointer-events:none;
+          width:${size}px; height:${size}px; object-fit:contain;
+          left:${ox}px; top:${oy}px;
+          transform:translate(-50%,-50%) rotate(0deg);
+          opacity:1; transition:none;
+        `;
+        document.body.appendChild(img);
+
+        const delay = Math.random() * 250;
+        const dur   = 1300 + Math.random() * 900;
+        const tx = ox + (Math.random() - 0.5) * window.innerWidth  * 1.4;
+        const ty = oy + (Math.random() - 0.5) * window.innerHeight * 1.4;
+        const rot = [-360, -180, 180, 360][Math.floor(Math.random() * 4)];
+
+        setTimeout(() => {
+          img.style.transition = `left ${dur}ms cubic-bezier(.2,.8,.3,1),
+                                  top  ${dur}ms cubic-bezier(.2,.8,.3,1),
+                                  transform ${dur}ms cubic-bezier(.2,.8,.3,1),
+                                  opacity ${dur * 0.4}ms ease ${dur * 0.6}ms`;
+          img.style.left      = tx + 'px';
+          img.style.top       = ty + 'px';
+          img.style.transform = `translate(-50%,-50%) rotate(${rot}deg)`;
+          img.style.opacity   = '0';
+          setTimeout(() => { if (img.parentNode) img.remove(); }, dur + 300);
+        }, delay);
+      }
+    }
+
+    // Form validation
+    function validateForm() {
+      const fields = [
+        { id: 'contact_name', test: v => v.trim().length > 0,  msg: 'contact_name-error' },
+        { id: 'email',        test: v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()), msg: 'email-error' },
+        { id: 'message',      test: v => v.trim().length > 0,  msg: 'message-error' },
+      ];
+      let valid = true;
+      fields.forEach(({ id, test, msg }) => {
+        const el  = document.getElementById(id);
+        const err = document.getElementById(msg);
+        if (!test(el.value)) {
+          el.classList.add('field-error');
+          err.classList.add('visible');
+          // clear error on input
+          el.addEventListener('input', function clear() {
+            el.classList.remove('field-error');
+            err.classList.remove('visible');
+            el.removeEventListener('input', clear);
+          });
+          valid = false;
+        } else {
+          el.classList.remove('field-error');
+          err.classList.remove('visible');
+        }
+      });
+      if (!valid) {
+        // shake the button to signal validation failure
+        const btn = document.getElementById('submit-btn');
+        btn.classList.add('shake');
+        btn.addEventListener('animationend', () => btn.classList.remove('shake'), { once: true });
+      }
+      return valid;
+    }
+
+    async function sendEnquiry() {
+      const data = new FormData();
+      data.append('name',    document.getElementById('contact_name').value.trim());
+      data.append('email',   document.getElementById('email').value.trim());
+      data.append('phone',   document.getElementById('phone').value.trim() || '—');
+      data.append('message', document.getElementById('message').value.trim());
+      try {
+        await fetch('submit.php', { method: 'POST', body: data });
+      } catch (_) { /* silent — animation shows regardless */ }
+    }
+
+    // Form submission — animated button
+    function handleFormSubmit(e) {
+      e.preventDefault();
+      if (!validateForm()) return;
+
+      const btn = document.getElementById('submit-btn');
+      if (btn.disabled) return;
+      btn.disabled = true;
+
+      // Fire email in background while animation plays
+      sendEnquiry();
+
+      // Stage 1: loading ring + "Bridging the gap" (3 seconds)
+      btn.innerHTML = `
+        <svg width="20" height="20" viewBox="0 0 20 20" style="transform:rotate(-90deg);flex-shrink:0;">
+          <circle cx="10" cy="10" r="8" fill="none" stroke="rgba(0,0,0,0.2)" stroke-width="2.5"/>
+          <circle id="prog-circle" cx="10" cy="10" r="8" fill="none" stroke="#000" stroke-width="2.5"
+                  stroke-dasharray="50.27" stroke-dashoffset="50.27"/>
+        </svg>
+        <span>Bridging the gap</span>
+      `;
+      // Double rAF ensures the SVG is painted before animation starts
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        const ring = document.getElementById('prog-circle');
+        if (ring) ring.classList.add('progress-ring-active');
+      }));
+
+      // Stage 2: success (permanent)
+      setTimeout(() => {
+        launchLogoConfetti(btn);
+        document.getElementById('success-message').textContent = pickMessage();
+        document.getElementById('contact-form').classList.add('hidden');
+        document.getElementById('form-success').classList.remove('hidden');
+      }, 3000);
+    }
+
+    // Nav scroll effect — transparent over hero, solid from About section onwards
+    const navbar = document.getElementById('navbar');
+    window.addEventListener('scroll', () => {
+      const aboutTop = document.getElementById('about').offsetTop;
+      if (window.scrollY >= aboutTop - 80) {
+        navbar.style.background = 'rgba(13,13,13,0.95)';
+        navbar.style.backdropFilter = 'blur(12px)';
+      } else {
+        navbar.style.background = 'rgba(13,13,13,0)';
+        navbar.style.backdropFilter = 'none';
+      }
+    }, { passive: true });
+
+    // Mobile menu
+    const hamburger = document.getElementById('hamburger');
+    const mobileMenu = document.getElementById('mobile-menu');
+    const iconMenu = document.getElementById('icon-menu');
+    const iconClose = document.getElementById('icon-close');
+    let menuOpen = false;
+
+    hamburger.addEventListener('click', () => {
+      menuOpen = !menuOpen;
+      mobileMenu.classList.toggle('open', menuOpen);
+      iconMenu.classList.toggle('hidden', menuOpen);
+      iconClose.classList.toggle('hidden', !menuOpen);
+    });
+
+    mobileMenu.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', () => {
+        menuOpen = false;
+        mobileMenu.classList.remove('open');
+        iconMenu.classList.remove('hidden');
+        iconClose.classList.add('hidden');
+      });
+    });
+
+    // Leaflet map (initialised after Leaflet script loads)
+    window.addEventListener('load', () => {
+      if (typeof L === 'undefined') return;
+      const map = L.map('map', {
+        center: [51.505, -0.09],
+        zoom: 10,
+        zoomControl: true,
+        scrollWheelZoom: false,
+        attributionControl: false,
+      });
+
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        subdomains: 'abcd',
+        maxZoom: 20,
+      }).addTo(map);
+
+      // ETS logo circle + red triangle pin (matches Base44 style)
+      const markerIcon = L.divIcon({
+        html: `<div style="display:flex;flex-direction:column;align-items:center;width:54px;">
+          <img src="brand_assets/ets_logo_base44.png" style="width:46px;height:46px;object-fit:contain;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.7));">
+          <div style="font-size:32px;line-height:1;margin-top:-4px;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.6));">📍</div>
+        </div>`,
+        iconSize: [54, 86],
+        iconAnchor: [27, 86],
+        popupAnchor: [0, -90],
+        className: '',
+      });
+
+      const schools = [
+        { name: 'Globe Primary School', address: 'Gawber Street, London E2 0JH', lat: 51.5285, lng: -0.0586, status: 'Active Partner', website: 'https://www.globeschool.org.uk/' },
+      ];
+
+      schools.forEach(school => {
+        let closeTimer;
+        const marker = L.marker([school.lat, school.lng], { icon: markerIcon }).addTo(map);
+        marker.bindPopup(`
+          <div style="font-family:Montserrat,sans-serif;min-width:160px;">
+            <div style="font-size:13px;font-weight:700;color:#111;">${school.name}</div>
+            <div style="font-size:11px;color:#555;margin-top:3px;">${school.address}</div>
+            <a href="${school.website}" target="_blank" rel="noopener noreferrer"
+               style="display:inline-block;margin-top:8px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:9999px;background:hsl(43 89% 55%);color:#000;text-decoration:none;">${school.status}</a>
+          </div>
+        `, { closeButton: true });
+        marker.on('mouseover', () => {
+          clearTimeout(closeTimer);
+          marker.openPopup();
+        });
+        marker.on('mouseout', () => {
+          closeTimer = setTimeout(() => marker.closePopup(), 2500);
+        });
+      });
+    });
+
+    // Animated hero word cycling
+    (function() {
+      const words = document.querySelectorAll('.animated-word');
+      if (!words.length) return;
+      let current = 0;
+      setInterval(function() {
+        words[current].removeAttribute('data-active');
+        words[current].setAttribute('data-exiting', 'true');
+        const prev = current;
+        setTimeout(function() {
+          words[prev].removeAttribute('data-exiting');
+          words[prev].style.transform = 'translateX(-50%) translateY(120px)';
+          words[prev].style.opacity = '0';
+        }, 400);
+        current = (current + 1) % words.length;
+        words[current].setAttribute('data-active', 'true');
+      }, 2200);
+    })();
+  </script>
+
+</body>
+</html>

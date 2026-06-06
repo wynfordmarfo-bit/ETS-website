@@ -1,0 +1,9 @@
+# Temporary screenshots
+temporary screenshots/
+
+# macOS
+.DS_Store
+
+# VS Code workspace
+*.code-workspace
+*.webarchive
