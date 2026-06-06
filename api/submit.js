@@ -24,6 +24,8 @@ module.exports = async function handler(req, res) {
 
   const body = `New enquiry from the Elite Touch Sports website:\n\nName:    ${name}\nEmail:   ${email}\nPhone:   ${phone || '—'}\nMessage: ${message}`;
 
+  const autoReply = `Hi ${name},\n\nThank you for reaching out to Elite Touch Sports. We've received your enquiry and will be in touch with you shortly.\n\nBest regards,\nElite Touch Sports`;
+
   try {
     await transporter.sendMail({
       from: `ETS Website <${process.env.GMAIL_USER}>`,
@@ -32,6 +34,14 @@ module.exports = async function handler(req, res) {
       replyTo: email,
       text: body,
     });
+
+    await transporter.sendMail({
+      from: `Elite Touch Sports <${process.env.GMAIL_USER}>`,
+      to: email,
+      subject: 'We received your enquiry — Elite Touch Sports',
+      text: autoReply,
+    });
+
     return res.status(200).json({ ok: true });
   } catch (err) {
     return res.status(500).json({ ok: false, error: 'Failed to send email' });
