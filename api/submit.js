@@ -28,7 +28,7 @@ module.exports = async function handler(req, res) {
 
   try {
     await transporter.sendMail({
-      from: 'Elite Touch Sports <enquiries@elitetouchsports.co.uk>',
+      from: `"Elite Touch Sports" <${process.env.GMAIL_USER}>`,
       to: 'enquiries@elitetouchsports.co.uk',
       subject: 'New Enquiry — Elite Touch Sports Website',
       replyTo: email,
@@ -36,9 +36,10 @@ module.exports = async function handler(req, res) {
     });
 
     await transporter.sendMail({
-      from: 'Elite Touch Sports <enquiries@elitetouchsports.co.uk>',
+      from: `"Elite Touch Sports" <${process.env.GMAIL_USER}>`,
       to: email,
       subject: 'We received your enquiry — Elite Touch Sports',
+      replyTo: 'enquiries@elitetouchsports.co.uk',
       text: autoReply,
     });
 
