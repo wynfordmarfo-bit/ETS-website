@@ -15,10 +15,12 @@ module.exports = async function handler(req, res) {
   }
 
   const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'mail.names.co.uk',
+    port: 465,
+    secure: true,
     auth: {
-      user: process.env.GMAIL_USER,
-      pass: process.env.GMAIL_PASS,
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
     },
   });
 
@@ -28,7 +30,7 @@ module.exports = async function handler(req, res) {
 
   try {
     await transporter.sendMail({
-      from: `ETS Website <${process.env.GMAIL_USER}>`,
+      from: 'Elite Touch Sports <enquiries@elitetouchsports.co.uk>',
       to: 'enquiries@elitetouchsports.co.uk',
       subject: 'New Enquiry — Elite Touch Sports Website',
       replyTo: email,
@@ -36,7 +38,7 @@ module.exports = async function handler(req, res) {
     });
 
     await transporter.sendMail({
-      from: `Elite Touch Sports <${process.env.GMAIL_USER}>`,
+      from: 'Elite Touch Sports <enquiries@elitetouchsports.co.uk>',
       to: email,
       subject: 'We received your enquiry — Elite Touch Sports',
       text: autoReply,
