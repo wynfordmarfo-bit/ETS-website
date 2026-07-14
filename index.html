@@ -87,7 +87,8 @@
 
   <style>
     *, *::before, *::after { -webkit-font-smoothing: antialiased; box-sizing: border-box; }
-    body { font-family: 'Inter', sans-serif; background: #0d0d0d; color: #fafafa; }
+    html { overflow-x: hidden; }
+    body { font-family: 'Inter', sans-serif; background: #0d0d0d; color: #fafafa; overflow-x: hidden; }
 
     .font-bebas { font-family: 'Bebas Neue', sans-serif; }
     .font-montserrat { font-family: 'Montserrat', sans-serif; }
@@ -108,9 +109,12 @@
       padding: 8px 12px;
       color: #fafafa;
       font-family: 'Inter', sans-serif;
-      font-size: 14px;
+      font-size: 16px;
       outline: none;
       transition: border-color 0.2s;
+    }
+    @media (min-width: 640px) {
+      .form-input { font-size: 14px; }
     }
     .form-input:focus { border-color: #F2B926; box-shadow: 0 0 0 2px rgba(242,185,38,0.15); }
     .form-input::placeholder { color: #444; font-style: italic; }
@@ -222,7 +226,7 @@
         </div>
 
         <!-- Hamburger -->
-        <button id="hamburger" class="md:hidden p-2 text-white" aria-label="Menu">
+        <button id="hamburger" class="md:hidden p-3 -mr-3 text-white" aria-label="Menu">
           <svg id="icon-menu" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="18" y2="18"/>
           </svg>
@@ -265,7 +269,7 @@
     <div class="absolute w-64 h-64 rounded-full pointer-events-none" style="background: radial-gradient(circle, #F2B926, transparent); bottom: 15%; left: 2%; opacity: 0.05;"></div>
 
     <!-- Content -->
-    <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-48 w-full">
+    <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-32 sm:pt-28 sm:pb-48 w-full">
       <div class="max-w-3xl mx-auto text-center">
 
         <!-- SEO-only H1: visually hidden but read by search engines -->
@@ -286,7 +290,7 @@
 
             <!-- Animated hero text -->
         <div class="mt-4">
-          <p class="font-montserrat font-black uppercase" style="color: #F2B926; font-size: clamp(1.3rem, 2.4vw, 2rem); letter-spacing: 0.06em; white-space: nowrap;">WE DON'T JUST RUN SESSIONS WE</p>
+          <p class="font-montserrat font-black uppercase" style="color: #F2B926; font-size: clamp(1rem, 4.5vw, 2rem); letter-spacing: 0.06em; line-height: 1.3;">WE DON'T JUST RUN SESSIONS WE</p>
           <div class="animated-word-container" style="height: 2.5rem; overflow: hidden; position: relative; margin-top: 0.3rem;">
             <span class="animated-word font-montserrat font-black uppercase" style="color: #ffffff; font-size: clamp(1rem, 1.8vw, 1.5rem); letter-spacing: 0.12em; position: absolute; left: 50%; transform: translateX(-50%) translateY(0); opacity: 1;" data-active="true">spark potential</span>
             <span class="animated-word font-montserrat font-black uppercase" style="color: #ffffff; font-size: clamp(1rem, 1.8vw, 1.5rem); letter-spacing: 0.12em; position: absolute; left: 50%; transform: translateX(-50%) translateY(100px); opacity: 0;">mentor</span>
@@ -319,7 +323,7 @@
 
   <!-- ===================== ABOUT ===================== -->
   <section id="about" class="py-24 bg-background">
-    <div class="max-w-7xl mx-auto px-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="w-full">
         <p class="mb-3 text-3xl font-extrabold text-center capitalize tracking-widest font-montserrat" style="color: #F2B926;">ABOUT US</p>
         <h2 class="text-foreground text-4xl font-black text-center tracking-tight leading-tight font-montserrat">Born From Our Own Journey Through School</h2>
@@ -502,6 +506,14 @@
         </div>
 
         <form id="contact-form" class="rounded-2xl p-8 space-y-5" style="background: #171717; border: 1px solid #2e2e2e;" onsubmit="handleFormSubmit(event)">
+
+          <!-- Honeypot: hidden from real visitors, bots often auto-fill it -->
+          <div style="position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden;" aria-hidden="true">
+            <label for="hp_company">Company</label>
+            <input type="text" id="hp_company" name="company" tabindex="-1" autocomplete="off">
+          </div>
+
+          <p id="form-error" class="hidden rounded-lg text-sm p-3 font-inter" style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.4); color: #ef4444;">Something went wrong sending your enquiry. Please try again, or email us directly at <a href="mailto:enquiries@elitetouchsports.co.uk" class="font-bold underline">enquiries@elitetouchsports.co.uk</a>.</p>
 
           <div class="space-y-2">
             <label class="block text-sm font-medium font-inter" style="color: #fafafa;">Name</label>
@@ -691,20 +703,27 @@
       return valid;
     }
 
+    // Returns true only if the email genuinely sent — never assume success
     async function sendEnquiry() {
       const payload = {
         name:    document.getElementById('contact_name').value.trim(),
         email:   document.getElementById('email').value.trim(),
         phone:   document.getElementById('phone').value.trim() || '—',
         message: document.getElementById('message').value.trim(),
+        company: document.getElementById('hp_company').value, // honeypot
       };
       try {
-        await fetch('/api/submit', {
+        const res = await fetch('/api/submit', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
-      } catch (_) { /* silent — animation shows regardless */ }
+        if (!res.ok) return false;
+        const data = await res.json().catch(() => ({}));
+        return data.ok === true;
+      } catch (_) {
+        return false;
+      }
     }
 
     // Form submission — animated button
@@ -715,11 +734,11 @@
       const btn = document.getElementById('submit-btn');
       if (btn.disabled) return;
       btn.disabled = true;
+      document.getElementById('form-error').classList.add('hidden');
 
-      // Fire email in background while animation plays
-      sendEnquiry();
+      const originalBtnHTML = btn.innerHTML;
 
-      // Stage 1: loading ring + "Bridging the gap" (3 seconds)
+      // Stage 1: loading ring + "Bridging the gap"
       btn.innerHTML = `
         <svg width="20" height="20" viewBox="0 0 20 20" style="transform:rotate(-90deg);flex-shrink:0;">
           <circle cx="10" cy="10" r="8" fill="none" stroke="rgba(0,0,0,0.2)" stroke-width="2.5"/>
@@ -734,13 +753,22 @@
         if (ring) ring.classList.add('progress-ring-active');
       }));
 
-      // Stage 2: success (permanent)
-      setTimeout(() => {
-        launchLogoConfetti(btn);
-        document.getElementById('success-message').textContent = pickMessage();
-        document.getElementById('contact-form').classList.add('hidden');
-        document.getElementById('form-success').classList.remove('hidden');
-      }, 3000);
+      // Keep the animation on screen for at least 3s, but only show success once we know the email actually sent
+      const minDelay = new Promise(resolve => setTimeout(resolve, 3000));
+      Promise.all([sendEnquiry(), minDelay]).then(([sent]) => {
+        if (sent) {
+          launchLogoConfetti(btn);
+          document.getElementById('success-message').textContent = pickMessage();
+          document.getElementById('contact-form').classList.add('hidden');
+          document.getElementById('form-success').classList.remove('hidden');
+        } else {
+          btn.innerHTML = originalBtnHTML;
+          btn.disabled = false;
+          btn.classList.add('shake');
+          btn.addEventListener('animationend', () => btn.classList.remove('shake'), { once: true });
+          document.getElementById('form-error').classList.remove('hidden');
+        }
+      });
     }
 
     // Nav scroll effect — transparent over hero, solid from About section onwards
