@@ -409,22 +409,7 @@
       <!-- Cards grid -->
       <div class="mx-1 grid grid-cols-1 md:grid-cols-3 gap-7">
 
-        <!-- Card 1 -->
-        <article class="news-card group rounded-2xl overflow-hidden flex flex-col cursor-pointer" style="background: #171717; border: 1px solid #2e2e2e;">
-          <div class="relative overflow-hidden" style="aspect-ratio: 16/9;">
-            <img src="brand_assets/latest_card_1.png" alt="Counting down to September!" class="news-img w-full h-full object-cover">
-            <div class="absolute inset-0" style="background: linear-gradient(to top, rgba(0,0,0,0.6), transparent);"></div>
-          </div>
-          <div class="p-6 flex flex-col flex-1">
-            <div class="flex items-center gap-3 text-xs mb-3 font-montserrat" style="color: #999;">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>
-              <span>July 2026</span>
-            </div>
-            <h3 class="text-base font-bold text-foreground leading-snug mb-3 font-montserrat group-hover:text-primary transition-colors">Counting down to September!</h3>
-            <p class="text-sm leading-relaxed flex-1 font-inter" style="color: #999;">This September, we're launching at Globe Primary School. We can't wait to leave a lasting impact and give students the skills and memories of a lifetime.</p>
-          </div>
-        </article>
-
+        <!-- No stories yet — cards go here -->
 
       </div>
     </div>
@@ -835,9 +820,7 @@
         className: '',
       });
 
-      const schools = [
-        { name: 'Globe Primary School', address: 'Gawber Street, London E2 0JH', lat: 51.5285, lng: -0.0586, status: 'Active Partner', website: 'https://www.globeschool.org.uk/' },
-      ];
+      const schools = [];
 
       schools.forEach(school => {
         let closeTimer;
