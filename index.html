@@ -136,8 +136,8 @@
     .leaflet-control-zoom a { background: #171717 !important; color: #fafafa !important; border-color: #2e2e2e !important; }
     .leaflet-control-zoom a:hover { background: #242424 !important; }
     .leaflet-bar { border: 1px solid #2e2e2e !important; box-shadow: none !important; }
-    .leaflet-control-attribution { background: rgba(13,13,13,0.6) !important; color: #999 !important; font-size: 10px !important; padding: 2px 6px !important; border-radius: 4px !important; }
-    .leaflet-control-attribution a { color: #999 !important; }
+    .leaflet-control-attribution { background: rgba(13,13,13,0.35) !important; color: #666 !important; font-size: 8px !important; padding: 1px 5px !important; border-radius: 3px !important; line-height: 1.4 !important; }
+    .leaflet-control-attribution a { color: #666 !important; }
     .leaflet-control-attribution a:hover { color: #F2B926 !important; }
 
     /* News card hover */
@@ -834,6 +834,7 @@
         scrollWheelZoom: false,
         attributionControl: true,
       });
+      map.attributionControl.setPrefix(false);
 
       L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?key=cb1_2jj8_1_18bda2ada3f21912b508a4d3', {
         subdomains: 'abcd',
