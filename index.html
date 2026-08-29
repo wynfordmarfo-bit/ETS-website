@@ -82,8 +82,8 @@
   </script>
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
+  <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js" defer></script>
 
   <style>
     *, *::before, *::after { -webkit-font-smoothing: antialiased; box-sizing: border-box; }
@@ -131,11 +131,14 @@
     }
     .shake { animation: shake 0.4s ease; }
 
-    /* Leaflet dark */
-    .leaflet-container { background: #0d0d0d; }
-    .leaflet-control-zoom a { background: #171717 !important; color: #fafafa !important; border-color: #2e2e2e !important; }
-    .leaflet-control-zoom a:hover { background: #242424 !important; }
-    .leaflet-bar { border: 1px solid #2e2e2e !important; box-shadow: none !important; }
+    /* Map dark */
+    .maplibregl-map { background: #0d0d0d; }
+    .maplibregl-ctrl-group { background: #171717 !important; border: 1px solid #2e2e2e !important; box-shadow: none !important; }
+    .maplibregl-ctrl-group button { background: #171717 !important; }
+    .maplibregl-ctrl-group button:hover { background: #242424 !important; }
+    .maplibregl-ctrl-icon { filter: invert(1); }
+    .maplibregl-popup-content { padding: 12px !important; border-radius: 10px !important; }
+    .maplibregl-popup-close-button { color: #555 !important; font-size: 16px !important; padding: 4px 6px !important; }
 
     /* News card hover */
     .news-card { transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s; }
@@ -821,52 +824,53 @@
       });
     });
 
-    // Leaflet map (initialised after Leaflet script loads)
+    // MapLibre map (initialised after MapLibre GL script loads)
     window.addEventListener('load', () => {
-      if (typeof L === 'undefined') return;
-      const map = L.map('map', {
-        center: [51.505, -0.09],
-        zoom: 10,
-        zoomControl: true,
-        scrollWheelZoom: false,
+      if (typeof maplibregl === 'undefined') return;
+      const map = new maplibregl.Map({
+        container: 'map',
+        style: 'https://tiles.openfreemap.org/styles/dark',
+        center: [-0.09, 51.505],
+        zoom: 9,
         attributionControl: false,
       });
 
-      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
-        maxZoom: 18,
-      }).addTo(map);
+      map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-left');
+      map.scrollZoom.disable();
 
       // ETS logo circle + red triangle pin (matches Base44 style)
-      const markerIcon = L.divIcon({
-        html: `<div style="display:flex;flex-direction:column;align-items:center;width:54px;">
+      function makeMarkerEl() {
+        const el = document.createElement('div');
+        el.style.cssText = 'display:flex;flex-direction:column;align-items:center;width:54px;cursor:pointer;';
+        el.innerHTML = `
           <img src="brand_assets/ets_logo_base44.png" style="width:46px;height:46px;object-fit:contain;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.7));">
           <div style="font-size:32px;line-height:1;margin-top:-4px;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.6));">📍</div>
-        </div>`,
-        iconSize: [54, 86],
-        iconAnchor: [27, 86],
-        popupAnchor: [0, -90],
-        className: '',
-      });
+        `;
+        return el;
+      }
 
       const schools = [];
 
       schools.forEach(school => {
         let closeTimer;
-        const marker = L.marker([school.lat, school.lng], { icon: markerIcon }).addTo(map);
-        marker.bindPopup(`
+        const el = makeMarkerEl();
+        const popup = new maplibregl.Popup({ closeButton: true, offset: [0, -90] }).setHTML(`
           <div style="font-family:Montserrat,sans-serif;min-width:160px;">
             <div style="font-size:13px;font-weight:700;color:#111;">${school.name}</div>
             <div style="font-size:11px;color:#555;margin-top:3px;">${school.address}</div>
             <a href="${school.website}" target="_blank" rel="noopener noreferrer"
                style="display:inline-block;margin-top:8px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:9999px;background:hsl(43 89% 55%);color:#000;text-decoration:none;">${school.status}</a>
           </div>
-        `, { closeButton: true });
-        marker.on('mouseover', () => {
+        `);
+        new maplibregl.Marker({ element: el, anchor: 'bottom' })
+          .setLngLat([school.lng, school.lat])
+          .addTo(map);
+        el.addEventListener('mouseenter', () => {
           clearTimeout(closeTimer);
-          marker.openPopup();
+          if (!popup.isOpen()) popup.setLngLat([school.lng, school.lat]).addTo(map);
         });
-        marker.on('mouseout', () => {
-          closeTimer = setTimeout(() => marker.closePopup(), 2500);
+        el.addEventListener('mouseleave', () => {
+          closeTimer = setTimeout(() => popup.remove(), 2500);
         });
       });
     });
